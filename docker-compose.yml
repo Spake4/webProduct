@@ -83,7 +83,7 @@ services:
       REDIS_URL: redis://redis:6379/0
       STORAGE_ENDPOINT: http://minio:9000
       STORAGE_PUBLIC_URL: http://localhost:9000/ai-editor
-      COMFYUI_URL: http://host.docker.internal:8188
+      COMFYUI_URL: http://host.docker.internal:8189
     depends_on:
       postgres:
         condition: service_healthy
