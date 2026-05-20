@@ -27,10 +27,14 @@ async def seed_services() -> None:
     from app.models.service import Service
 
     default_services = [
-        {"name": "Перекраска автомобиля",  "slug": "car-recolor",       "category": "auto",     "icon": "🚗", "description": "Измените цвет автомобиля на фото"},
-        {"name": "Улучшение детализации",  "slug": "photo-enhancement", "category": "utility",  "icon": "✨", "description": "Повышение резкости, детализации и качества фото с помощью AI"},
-        {"name": "Аниме стиль",            "slug": "anime-style",       "category": "stylize",  "icon": "🌸", "description": "Превратите фото в аниме-иллюстрацию"},
-        {"name": "Масляная живопись",      "slug": "oil-painting",      "category": "stylize",  "icon": "🎨", "description": "Стилизация под картину маслом"},
+        {"name": "Перекраска автомобиля",  "slug": "car-recolor",       "category": "auto",     "icon": "Car",          "description": "Измените цвет кузова автомобиля на любой"},
+        {"name": "Улучшение фото",         "slug": "photo-enhancement", "category": "utility",  "icon": "Sparkles",     "description": "Повышение резкости, детализации и качества фото с помощью AI"},
+        {"name": "Аниме стиль",            "slug": "anime-style",       "category": "stylize",  "icon": "Wand2",        "description": "Превратите фото в аниме-иллюстрацию Studio Ghibli"},
+        {"name": "Масляная живопись",      "slug": "oil-painting",      "category": "stylize",  "icon": "Palette",      "description": "Стилизация под картину маслом в духе импрессионизма"},
+        {"name": "Карандашный скетч",      "slug": "pencil-sketch",     "category": "stylize",  "icon": "PenLine",      "description": "Превращает фото в художественный карандашный рисунок"},
+        {"name": "Киберпанк",              "slug": "cyberpunk",         "category": "stylize",  "icon": "Zap",          "description": "Неоновый киберпанк-стиль в духе Blade Runner"},
+        {"name": "Акварель",               "slug": "watercolor",        "category": "stylize",  "icon": "Droplets",     "description": "Нежная акварельная живопись с текстурой бумаги"},
+        {"name": "Улучшение портрета",     "slug": "portrait-enhance",  "category": "portrait", "icon": "UserRound",    "description": "Профессиональная ретушь и улучшение портретного фото"},
     ]
 
     async with AsyncSessionLocal() as db:
@@ -182,6 +186,46 @@ def _photo_enhancement_workflow() -> dict:
     }
 
 
+def _pencil_sketch_workflow() -> dict:
+    return _flux_kontext(
+        "Transform this image into a detailed artistic pencil sketch on white paper. "
+        "Fine pencil lines, realistic cross-hatching shading, light and shadow contrast, "
+        "professional hand-drawn pencil drawing, grayscale, clean white background, "
+        "detailed linework, realistic proportions, sketch art style"
+    )
+
+
+def _cyberpunk_workflow() -> dict:
+    return _flux_kontext(
+        "Transform this image into a cyberpunk aesthetic. "
+        "Intense neon lights in cyan, purple and magenta, dark rainy city atmosphere, "
+        "holographic UI elements, futuristic dystopian feel, Blade Runner 2049 style, "
+        "neon reflections on wet surfaces, high contrast dramatic lighting, "
+        "retrofuturistic technology, cinematic composition"
+    )
+
+
+def _watercolor_workflow() -> dict:
+    return _flux_kontext(
+        "Transform this image into a delicate watercolor painting. "
+        "Soft wet-on-wet washes of color, visible paper texture, bleeding color edges, "
+        "transparent layered paint, gentle color gradients, white highlights, "
+        "artistic watercolor illustration style, pastel and vibrant tones, "
+        "loose expressive brushwork, fine art quality"
+    )
+
+
+def _portrait_enhance_workflow() -> dict:
+    return _flux_kontext(
+        "Enhance this portrait photo to professional quality. "
+        "Perfect natural skin retouching, enhance facial features, "
+        "soft creamy background bokeh, professional studio lighting, "
+        "sharp detailed eyes, glamour fashion photography style, "
+        "RAW photo quality, shot on Sony A7R with 85mm f/1.2 lens, "
+        "subtle makeup enhancement, cinematic color grading"
+    )
+
+
 def _anime_style_workflow() -> dict:
     return _flux_kontext(
         "Transform this image into a beautiful anime illustration. "
@@ -214,6 +258,10 @@ async def update_service_workflows() -> None:
         ("photo-enhancement",  _photo_enhancement_workflow()),
         ("anime-style",        _anime_style_workflow()),
         ("oil-painting",       _oil_painting_workflow()),
+        ("pencil-sketch",      _pencil_sketch_workflow()),
+        ("cyberpunk",          _cyberpunk_workflow()),
+        ("watercolor",         _watercolor_workflow()),
+        ("portrait-enhance",   _portrait_enhance_workflow()),
     ]
 
     async with AsyncSessionLocal() as db:
