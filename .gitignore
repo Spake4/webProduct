@@ -1,0 +1,44 @@
+# Node
+node_modules/
+dist/
+.pnp
+.pnp.js
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+*.egg-info/
+
+# Env files
+.env
+*.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+build/
+*.log
+
+# Docker
+.docker/
+
+# Claude Code
+.claude/
+
+# Test images
+car.png
+car_red_docker.png
+car_red_result.png
