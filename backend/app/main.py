@@ -27,8 +27,10 @@ async def seed_services() -> None:
     from app.models.service import Service
 
     default_services = [
-        {"name": "Перекраска автомобиля", "slug": "car-recolor", "category": "auto", "icon": "🚗", "description": "Измените цвет автомобиля на фото"},
-        {"name": "Улучшение детализации", "slug": "photo-enhancement", "category": "utility", "icon": "✨", "description": "Повышение резкости, детализации и качества фото с помощью AI"},
+        {"name": "Перекраска автомобиля",  "slug": "car-recolor",       "category": "auto",     "icon": "🚗", "description": "Измените цвет автомобиля на фото"},
+        {"name": "Улучшение детализации",  "slug": "photo-enhancement", "category": "utility",  "icon": "✨", "description": "Повышение резкости, детализации и качества фото с помощью AI"},
+        {"name": "Аниме стиль",            "slug": "anime-style",       "category": "stylize",  "icon": "🌸", "description": "Превратите фото в аниме-иллюстрацию"},
+        {"name": "Масляная живопись",      "slug": "oil-painting",      "category": "stylize",  "icon": "🎨", "description": "Стилизация под картину маслом"},
     ]
 
     async with AsyncSessionLocal() as db:
@@ -180,6 +182,27 @@ def _photo_enhancement_workflow() -> dict:
     }
 
 
+def _anime_style_workflow() -> dict:
+    return _flux_kontext(
+        "Transform this image into a beautiful anime illustration. "
+        "Clean bold outlines, vibrant saturated colors, cel-shading, smooth gradients, "
+        "large expressive eyes if there are people, detailed stylized hair, "
+        "Japanese animation aesthetic, Studio Ghibli quality art, "
+        "soft lighting, dreamy atmosphere, high quality anime key visual"
+    )
+
+
+def _oil_painting_workflow() -> dict:
+    return _flux_kontext(
+        "Transform this image into a classic oil painting. "
+        "Visible thick oil paint brushstrokes, rich impasto texture, "
+        "vibrant natural colors, impressionist painting technique, "
+        "canvas texture visible, fine art museum quality, "
+        "painted by a master painter, dramatic lighting, "
+        "reminiscent of Van Gogh or Monet style"
+    )
+
+
 async def update_service_workflows() -> None:
     """Apply real ComfyUI workflow JSONs to services (runs on every startup, idempotent)."""
     from sqlalchemy import update as sql_update
@@ -189,6 +212,8 @@ async def update_service_workflows() -> None:
     workflow_updates: list[tuple[str, dict]] = [
         ("car-recolor",        _flux_kontext("Change the color of the car to red")),
         ("photo-enhancement",  _photo_enhancement_workflow()),
+        ("anime-style",        _anime_style_workflow()),
+        ("oil-painting",       _oil_painting_workflow()),
     ]
 
     async with AsyncSessionLocal() as db:
