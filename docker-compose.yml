@@ -55,7 +55,6 @@ services:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/ai_editor
       REDIS_URL: redis://redis:6379/0
       STORAGE_ENDPOINT: http://minio:9000
-      STORAGE_PUBLIC_URL: http://localhost:9000/ai-editor
     ports:
       - "8000:8000"
     depends_on:
@@ -82,7 +81,6 @@ services:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/ai_editor
       REDIS_URL: redis://redis:6379/0
       STORAGE_ENDPOINT: http://minio:9000
-      STORAGE_PUBLIC_URL: http://localhost:9000/ai-editor
       COMFYUI_URL: http://host.docker.internal:8189
     depends_on:
       postgres:
