@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Zap } from 'lucide-react'
 import { Input } from '@/components/ui/Input'
@@ -10,6 +10,8 @@ export const Login = () => {
   const [isRegister, setIsRegister] = useState(false)
   const [form, setForm] = useState({ email: '', username: '', password: '' })
   const navigate = useNavigate()
+  const location = useLocation()
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname ?? '/'
   const loginMutation = useLogin()
   const registerMutation = useRegister()
 
@@ -21,7 +23,7 @@ export const Login = () => {
       } else {
         await loginMutation.mutateAsync({ email: form.email, password: form.password })
       }
-      navigate('/')
+      navigate(from, { replace: true })
     } catch (_) {
       // errors handled by mutation
     }
