@@ -2,11 +2,13 @@ import { useState, useRef, useEffect } from 'react'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, ChevronRight, Pipette } from 'lucide-react'
+import * as LucideIcons from 'lucide-react'
 import { ImageUploader } from '@/components/ImageUploader/ImageUploader'
 import { ResultViewer } from '@/components/ResultViewer/ResultViewer'
 import { ServiceCard } from '@/components/ServiceCard/ServiceCard'
 import { Button } from '@/components/ui/Button'
 import { useEditorStore } from '@/stores/editorStore'
+
 import { useUploadImage, useCreateTask, useTask } from '@/api/tasks'
 import { useServices } from '@/api/services'
 
@@ -59,6 +61,13 @@ function hexToColorDesc(hex: string): string {
 
 function buildColorPrompt(colorEn: string): string {
   return `Repaint the car body to solid ${colorEn} color. Keep the background, wheels, windows, and lighting exactly the same.`
+}
+
+type LucideIconComponent = React.ComponentType<{ size?: number; className?: string }>
+function ServiceIcon({ name, size = 20 }: { name: string; size?: number }) {
+  const Icon = (LucideIcons as Record<string, unknown>)[name] as LucideIconComponent | undefined
+  if (Icon) return <Icon size={size} className="text-violet-300" />
+  return <Sparkles size={size} className="text-violet-300" />
 }
 
 export const EditorWorkspace = () => {
@@ -158,7 +167,9 @@ export const EditorWorkspace = () => {
           </h3>
           {selectedService ? (
             <div className="flex items-center gap-3 p-3 rounded-xl bg-violet-500/10 border border-violet-500/20">
-              <span className="text-2xl">{selectedService.icon}</span>
+              <div className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+                <ServiceIcon name={selectedService.icon} size={18} />
+              </div>
               <div className="flex-1">
                 <p className="text-sm font-medium text-white">{selectedService.name}</p>
                 <p className="text-xs text-white/40">{selectedService.category}</p>
