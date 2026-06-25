@@ -50,14 +50,14 @@ export const Profile = () => {
   ]
 
   return (
-    <div className="min-h-screen p-6 space-y-8">
+    <div className="min-h-screen p-6 pt-10 space-y-8">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         className="flex items-center gap-4"
       >
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-blue-500 flex items-center justify-center text-2xl font-bold text-white">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-blue-500 flex items-center justify-center text-2xl font-bold text-white shadow-glow ring-2 ring-violet-500/20">
           {user.email[0].toUpperCase()}
         </div>
         <div>
@@ -74,7 +74,7 @@ export const Profile = () => {
         className="grid grid-cols-3 gap-4"
       >
         {stats.map(({ icon: Icon, label, value, color, bg }) => (
-          <div key={label} className="glass-card rounded-2xl p-4 flex items-center gap-3">
+          <div key={label} className="glass-card rounded-2xl p-4 flex items-center gap-3 hover:border-violet-500/25 hover:-translate-y-0.5 transition-all duration-300">
             <div className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center`}>
               <Icon size={20} className={color} />
             </div>

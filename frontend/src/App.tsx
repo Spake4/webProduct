@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Toaster } from 'sonner'
 import { Layout } from '@/components/Layout/Layout'
 import { Home } from '@/pages/Home/Home'
 import { Editor } from '@/pages/Editor/Editor'
@@ -30,6 +31,18 @@ function App() {
           </Route>
         </Routes>
       </BrowserRouter>
+      <Toaster
+        position="bottom-right"
+        toastOptions={{
+          style: {
+            background: '#1a1a2e',
+            border: '1px solid rgba(124,58,237,0.3)',
+            color: '#fff',
+            borderRadius: '12px',
+          },
+        }}
+        richColors
+      />
     </QueryClientProvider>
   )
 }

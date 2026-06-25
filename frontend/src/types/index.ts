@@ -27,6 +27,7 @@ export interface Task {
   service_id: string
   service?: Service
   status: TaskStatus
+  progress: number
   input_image_url: string
   output_image_url?: string
   params: Record<string, unknown>

@@ -42,3 +42,8 @@ build/
 car.png
 car_red_docker.png
 car_red_result.png
+
+# Server configs with IPs/passwords
+nginx-conf/
+.secrets
+backend/.env

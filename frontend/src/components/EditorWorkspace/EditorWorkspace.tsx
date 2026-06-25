@@ -1,8 +1,8 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, ChevronRight, Pipette } from 'lucide-react'
 import { ImageUploader } from '@/components/ImageUploader/ImageUploader'
-import { ProgressTracker } from '@/components/ProgressTracker/ProgressTracker'
 import { ResultViewer } from '@/components/ResultViewer/ResultViewer'
 import { ServiceCard } from '@/components/ServiceCard/ServiceCard'
 import { Button } from '@/components/ui/Button'
@@ -75,6 +75,8 @@ export const EditorWorkspace = () => {
   } = useEditorStore()
 
   const [taskId, setTaskId] = useState<string | null>(null)
+  const [bgImageFile, setBgImageFile] = useState<File | null>(null)
+  const [bgImageUrl, setBgImageUrl] = useState<string | null>(null)
   const [selectedColorHex, setSelectedColorHex] = useState<string | null>(null)
   const colorInputRef = useRef<HTMLInputElement>(null)
   const { data: services } = useServices()
@@ -91,10 +93,17 @@ export const EditorWorkspace = () => {
 
     try {
       const { url } = await uploadMutation.mutateAsync(uploadedImageFile)
+
+      let bgUrl: string | undefined
+      if (selectedService.slug === 'background-replace' && bgImageFile) {
+        const bgUpload = await uploadMutation.mutateAsync(bgImageFile)
+        bgUrl = bgUpload.url
+      }
+
       const newTask = await createTaskMutation.mutateAsync({
         service_id: selectedService.id,
         input_image_url: url,
-        params: { ...params },
+        params: { ...params, ...(bgUrl ? { background_image_url: bgUrl } : {}) },
       })
       setCurrentTask(newTask)
       setTaskId(newTask.id)
@@ -108,6 +117,8 @@ export const EditorWorkspace = () => {
     setTaskId(null)
     setCurrentTask(null)
     setUploadedImage(null, null)
+    setBgImageFile(null)
+    setBgImageUrl(null)
     setSelectedColorHex(null)
     setParams({})
   }
@@ -115,6 +126,26 @@ export const EditorWorkspace = () => {
 
   const isRunning = task?.status === 'pending' || task?.status === 'processing'
   const isCompleted = task?.status === 'completed'
+
+  const prevStatusRef = useRef<string | undefined>(undefined)
+  useEffect(() => {
+    if (!task) return
+    const prev = prevStatusRef.current
+    prevStatusRef.current = task.status
+    if (prev === 'processing' || prev === 'pending') {
+      if (task.status === 'completed') {
+        toast.success('Готово! Изображение обработано', {
+          description: 'Результат доступен в правой панели',
+          duration: 5000,
+        })
+      } else if (task.status === 'failed') {
+        toast.error('Ошибка обработки', {
+          description: task.error_msg ?? 'Попробуй ещё раз',
+          duration: 6000,
+        })
+      }
+    }
+  }, [task?.status])
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
@@ -165,6 +196,21 @@ export const EditorWorkspace = () => {
             disabled={isRunning}
           />
         </div>
+
+        {/* Background image uploader for background-replace */}
+        {selectedService?.slug === 'background-replace' && (
+          <div className="glass-card rounded-2xl p-5">
+            <h3 className="font-syne font-semibold text-white mb-3 flex items-center gap-2">
+              <span className="text-violet-400">03.</span> Загрузите фоновое изображение
+            </h3>
+            <ImageUploader
+              onImageSelect={(file, url) => { setBgImageFile(file); setBgImageUrl(url) }}
+              onClear={() => { setBgImageFile(null); setBgImageUrl(null) }}
+              currentImage={bgImageUrl}
+              disabled={isRunning}
+            />
+          </div>
+        )}
 
         {/* Color picker for car-recolor */}
         {selectedService?.slug === 'car-recolor' && (
@@ -252,7 +298,7 @@ export const EditorWorkspace = () => {
         <Button
           size="lg"
           className="w-full gap-2"
-          disabled={!selectedService || !uploadedImageUrl || isRunning}
+          disabled={!selectedService || !uploadedImageUrl || isRunning || (selectedService?.slug === 'background-replace' && !bgImageUrl)}
           loading={uploadMutation.isPending || createTaskMutation.isPending}
           onClick={handleRun}
         >
@@ -271,7 +317,6 @@ export const EditorWorkspace = () => {
 
         {task && !isCompleted && (
           <>
-            <ProgressTracker status={task.status} />
             {task.status === 'failed' && (
               <div className="flex items-center justify-between">
                 {task.error_msg && (
@@ -337,11 +382,32 @@ export const EditorWorkspace = () => {
               className="glass-card rounded-2xl p-5 aspect-square flex flex-col items-center justify-center gap-4 text-center"
             >
               <div className="w-20 h-20 rounded-2xl bg-violet-500/10 flex items-center justify-center">
-                <Sparkles size={36} className="text-violet-400/50" />
+                {isRunning ? (
+                  <span className="text-violet-300 font-mono font-bold text-2xl">
+                    {task?.progress ?? 0}%
+                  </span>
+                ) : (
+                  <Sparkles size={36} className="text-violet-400/50" />
+                )}
               </div>
               <div>
-                <p className="text-white/40 text-sm">Результат появится здесь</p>
-                <p className="text-white/20 text-xs mt-1">после обработки</p>
+                {isRunning ? (
+                  <>
+                    <p className="text-violet-300/70 text-sm font-medium">Обрабатывается...</p>
+                    <div className="mt-2 w-32 h-1 bg-white/5 rounded-full overflow-hidden mx-auto">
+                      <motion.div
+                        className="h-full bg-gradient-to-r from-violet-600 to-blue-500 rounded-full"
+                        animate={{ width: `${task?.progress ?? 0}%` }}
+                        transition={{ duration: 0.4, ease: 'easeOut' }}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-white/40 text-sm">Результат появится здесь</p>
+                    <p className="text-white/20 text-xs mt-1">после обработки</p>
+                  </>
+                )}
               </div>
             </motion.div>
           )}

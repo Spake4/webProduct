@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 
 interface ProgressTrackerProps {
   status: TaskStatus
+  progress: number
   className?: string
 }
 
@@ -14,14 +15,12 @@ const statusConfig = {
     icon: Clock,
     color: 'text-yellow-400',
     bg: 'bg-yellow-500/10',
-    progress: 15,
   },
   processing: {
     label: 'Обработка изображения...',
     icon: Loader2,
     color: 'text-blue-400',
     bg: 'bg-blue-500/10',
-    progress: 60,
     spin: true,
   },
   completed: {
@@ -29,35 +28,28 @@ const statusConfig = {
     icon: CheckCircle,
     color: 'text-green-400',
     bg: 'bg-green-500/10',
-    progress: 100,
   },
   failed: {
     label: 'Ошибка обработки',
     icon: XCircle,
     color: 'text-red-400',
     bg: 'bg-red-500/10',
-    progress: 100,
   },
 }
 
 const steps = [
-  { key: 'upload', label: 'Загрузка' },
-  { key: 'queue', label: 'Очередь' },
-  { key: 'processing', label: 'ComfyUI' },
-  { key: 'saving', label: 'Сохранение' },
+  { key: 'upload', label: 'Загрузка',  threshold: 15 },
+  { key: 'queue',  label: 'Очередь',   threshold: 25 },
+  { key: 'ai',     label: 'ComfyUI',   threshold: 90 },
+  { key: 'saving', label: 'Готово',    threshold: 100 },
 ]
 
-const stepByStatus: Record<TaskStatus, number> = {
-  pending: 1,
-  processing: 2,
-  completed: 4,
-  failed: 4,
-}
+const stepNum: Record<string, string> = { upload: '1', queue: '2', ai: '3', saving: '4' }
 
-export const ProgressTracker = ({ status, className }: ProgressTrackerProps) => {
+export const ProgressTracker = ({ status, progress, className }: ProgressTrackerProps) => {
   const config = statusConfig[status]
   const Icon = config.icon
-  const currentStep = stepByStatus[status]
+  const displayProgress = status === 'completed' ? 100 : progress
 
   return (
     <div className={cn('glass-card rounded-2xl p-5 space-y-5', className)}>
@@ -65,16 +57,19 @@ export const ProgressTracker = ({ status, className }: ProgressTrackerProps) => 
       <div className={cn('flex items-center gap-3 rounded-xl px-4 py-3', config.bg)}>
         <Icon
           size={20}
-          className={cn(config.color, 'spin' in config && config.spin && 'animate-spin')}
+          className={cn(config.color, 'spin' in config && config.spin ? 'animate-spin' : '')}
         />
         <span className={cn('font-medium text-sm', config.color)}>{config.label}</span>
+        {status === 'processing' && (
+          <span className="ml-auto text-xs text-white/30 font-mono">{displayProgress}%</span>
+        )}
       </div>
 
       {/* Progress bar */}
       <div>
         <div className="flex justify-between text-xs text-white/40 mb-2">
           <span>Прогресс</span>
-          <span>{config.progress}%</span>
+          <span>{displayProgress}%</span>
         </div>
         <div className="h-1.5 bg-white/5 rounded-full overflow-hidden relative">
           <motion.div
@@ -83,10 +78,9 @@ export const ProgressTracker = ({ status, className }: ProgressTrackerProps) => 
               status === 'failed' ? 'bg-red-500' : 'bg-gradient-to-r from-violet-600 to-blue-500'
             )}
             initial={{ width: 0 }}
-            animate={{ width: `${config.progress}%` }}
-            transition={{ duration: 0.5, ease: 'easeOut' }}
+            animate={{ width: `${displayProgress}%` }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
           />
-          {/* Shimmer overlay while active */}
           {(status === 'pending' || status === 'processing') && (
             <motion.div
               className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
@@ -100,28 +94,33 @@ export const ProgressTracker = ({ status, className }: ProgressTrackerProps) => 
 
       {/* Steps */}
       <div className="flex items-center justify-between">
-        {steps.map((step, idx) => {
-          const stepNum = idx + 1
-          const isDone = stepNum < currentStep || status === 'completed'
-          const isActive = stepNum === currentStep && status !== 'completed' && status !== 'failed'
-          const isFailed = status === 'failed' && stepNum === currentStep
+        {steps.map((step) => {
+          const isDone =
+            status === 'completed' ||
+            (status !== 'failed' && displayProgress >= step.threshold)
+          const isActive =
+            status !== 'completed' &&
+            status !== 'failed' &&
+            displayProgress >= step.threshold - 15 &&
+            displayProgress < step.threshold
+          const isFailed = status === 'failed'
 
           return (
             <div key={step.key} className="flex flex-col items-center gap-1.5">
               <div
                 className={cn(
                   'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all',
-                  isDone && 'bg-green-500/20 text-green-400',
-                  isActive && 'bg-violet-500/30 text-violet-300 ring-2 ring-violet-500/50',
-                  isFailed && 'bg-red-500/20 text-red-400',
-                  !isDone && !isActive && !isFailed && 'bg-white/5 text-white/20'
+                  isDone ? 'bg-green-500/20 text-green-400' :
+                  isActive ? 'bg-violet-500/30 text-violet-300 ring-2 ring-violet-500/50' :
+                  isFailed ? 'bg-red-500/20 text-red-400' :
+                  'bg-white/5 text-white/20'
                 )}
               >
-                {isDone ? '✓' : stepNum}
+                {isDone ? '✓' : stepNum[step.key]}
               </div>
               <span className={cn(
                 'text-xs',
-                (isDone || isActive) ? 'text-white/60' : 'text-white/20'
+                isDone || isActive ? 'text-white/60' : 'text-white/20'
               )}>
                 {step.label}
               </span>
