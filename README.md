@@ -161,3 +161,35 @@ Swagger UI: `http://localhost:8000/api/docs`
 ## Лицензия
 
 MIT
+
+## Безопасность
+
+### Закрытые порты
+| Порт | Сервис | Доступ |
+|------|--------|--------|
+| 22 | SSH | Только по ключу |
+| 80 | HTTP | Редирект на HTTPS |
+| 443 | HTTPS | Публично |
+| 8000 | Backend API | Только с фронтенд-сервера |
+| 9000 | MinIO storage | Только с фронтенд-сервера |
+| 9001 | MinIO console | Заблокирован |
+| 8189 | ComfyUI | Только Docker сеть |
+
+### Важно: Docker обходит UFW
+Docker напрямую манипулирует iptables и игнорирует правила UFW для проброшенных портов.
+Для защиты используется `DOCKER-USER` chain:
+```bash
+iptables -I DOCKER-USER -p tcp --dport 9001 -j DROP
+iptables -I DOCKER-USER -p tcp --dport 9000 ! -s FRONTEND_IP -j DROP
+iptables -I DOCKER-USER -p tcp --dport 8000 ! -s FRONTEND_IP -j DROP
+```
+Правила восстанавливаются после ребута через systemd сервис `docker-iptables.service`.
+
+### HTTPS заголовки (nginx)
+```nginx
+add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+add_header X-Frame-Options "SAMEORIGIN" always;
+add_header X-Content-Type-Options "nosniff" always;
+add_header X-XSS-Protection "1; mode=block" always;
+server_tokens off;
+```
