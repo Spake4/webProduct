@@ -17,9 +17,6 @@ logger = logging.getLogger(__name__)
 
 
 def _make_session() -> async_sessionmaker[AsyncSession]:
-    """Create a fresh engine+session with NullPool for each Celery task.
-    NullPool avoids "Future attached to a different loop" errors caused by
-    SQLAlchemy reusing connections across separate asyncio event loops."""
     engine = create_async_engine(settings.DATABASE_URL, poolclass=NullPool)
     return async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
@@ -34,8 +31,12 @@ def run_async(coro):  # type: ignore[no-untyped-def]
 
 @celery_app.task(bind=True, max_retries=3)  # type: ignore[misc]
 def process_task(self, task_id: str) -> None:
-    """Main Celery task: runs ComfyUI workflow and updates task status."""
     run_async(_process_task_async(task_id))
+
+
+async def _set_progress(db: AsyncSession, task: Task, progress: int) -> None:
+    task.progress = progress
+    await db.commit()
 
 
 async def _process_task_async(task_id: str) -> None:
@@ -44,16 +45,12 @@ async def _process_task_async(task_id: str) -> None:
     SessionLocal = _make_session()
 
     async with SessionLocal() as db:
-        # Load task with service
-        result = await db.execute(
-            select(Task).where(Task.id == task_id)
-        )
+        result = await db.execute(select(Task).where(Task.id == task_id))
         task = result.scalar_one_or_none()
         if not task:
             logger.error(f"Task {task_id} not found")
             return
 
-        # Load service separately
         from app.models.service import Service
         svc_result = await db.execute(select(Service).where(Service.id == task.service_id))
         service = svc_result.scalar_one_or_none()
@@ -63,44 +60,48 @@ async def _process_task_async(task_id: str) -> None:
             return
 
         try:
-            # Update to processing
             task.status = "processing"
+            task.progress = 5
             await db.commit()
 
-            # Download input image
+            # Download and upload input image to ComfyUI
             input_bytes = storage.download_from_url(task.input_image_url)
             comfy_filename = await comfyui.upload_image(input_bytes, f"input_{task_id}.png")
+            await _set_progress(db, task, 15)
 
-            # Inject workflow
+            # Inject workflow params
             workflow = comfyui.inject_image_into_workflow(
                 service.comfyui_workflow,
                 comfy_filename,
                 task.params or {},
             )
 
-            # Queue prompt
+            # Queue prompt in ComfyUI
             prompt_id = await comfyui.queue_prompt(workflow)
             task.comfyui_prompt_id = prompt_id
-            await db.commit()
+            await _set_progress(db, task, 25)
 
-            # Wait for completion
-            history = await comfyui.wait_for_completion(prompt_id)
+            # Wait for ComfyUI to finish, updating progress in real time
+            async def update_progress(pct: int) -> None:
+                await _set_progress(db, task, pct)
 
-            # Get output image
+            history = await comfyui.wait_for_completion(
+                prompt_id, on_progress=update_progress
+            )
+
+            # Download result and upload to storage
             output_bytes = await comfyui.get_output_image(history)
             if not output_bytes:
                 await _fail_task(db, task, "ComfyUI не вернул изображение")
                 return
 
-            # Upload result to storage
             output_url = storage.upload_bytes(output_bytes, f"output_{task_id}.png")
 
-            # Update task
             task.status = "completed"
+            task.progress = 100
             task.output_image_url = output_url
             task.completed_at = datetime.now(timezone.utc)
 
-            # Create gallery item
             gallery_item = GalleryItem(
                 task_id=task_id,
                 user_id=task.user_id,
@@ -115,8 +116,9 @@ async def _process_task_async(task_id: str) -> None:
             await _fail_task(db, task, str(exc))
 
 
-async def _fail_task(db, task: Task, error: str) -> None:
+async def _fail_task(db: AsyncSession, task: Task, error: str) -> None:
     task.status = "failed"
+    task.progress = 0
     task.error_msg = error
     task.completed_at = datetime.now(timezone.utc)
     await db.commit()

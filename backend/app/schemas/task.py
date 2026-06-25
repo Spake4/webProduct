@@ -17,6 +17,7 @@ class TaskOut(BaseModel):
     service_id: str
     service: ServiceOut | None = None
     status: str
+    progress: int = 0
     input_image_url: str
     output_image_url: str | None = None
     params: dict[str, Any]

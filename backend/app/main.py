@@ -99,7 +99,7 @@ def _flux_kontext(default_prompt: str) -> dict:
         },
         "192:37": {
             "inputs": {
-                "unet_name": "flux1-dev-kontext_fp8_scaled.safetensors",
+                "unet_name": "flux1-kontext-dev.safetensors",
                 "weight_dtype": "default",
             },
             "class_type": "UNETLoader",
@@ -178,7 +178,7 @@ def _photo_enhancement_workflow() -> dict:
                           "negative": ["8", 0], "latent_image": ["12", 0]},        "class_type": "KSampler"},
         "14": {"inputs": {"samples": ["13", 0], "vae": ["5", 0]},                  "class_type": "VAEDecode"},
         "15": {"inputs": {"filename_prefix": "ComfyUI", "images": ["14", 0]},      "class_type": "SaveImage"},
-        "23": {"inputs": {"unet_name": "flux1-dev-Q4_1.gguf"},                     "class_type": "UnetLoaderGGUF"},
+        "23": {"inputs": {"unet_name": "flux1-dev-Q8_0.gguf"},                     "class_type": "UnetLoaderGGUF"},
         "24": {"inputs": {"clip_name1": "t5xxl_fp8_e4m3fn.safetensors",
                           "clip_name2": "clip_l.safetensors",
                           "type": "flux", "device": "default"},                    "class_type": "DualCLIPLoader"},
@@ -217,12 +217,11 @@ def _watercolor_workflow() -> dict:
 
 def _portrait_enhance_workflow() -> dict:
     return _flux_kontext(
-        "Enhance this portrait photo to professional quality. "
-        "Perfect natural skin retouching, enhance facial features, "
-        "soft creamy background bokeh, professional studio lighting, "
-        "sharp detailed eyes, glamour fashion photography style, "
-        "RAW photo quality, shot on Sony A7R with 85mm f/1.2 lens, "
-        "subtle makeup enhancement, cinematic color grading"
+        "Restore and colorize this old damaged photo. "
+        "Remove all cracks, tears, scratches, stains and damage completely. "
+        "Restore missing areas seamlessly. Add natural realistic colorization. "
+        "Enhance sharpness and clarity. Make it look like a modern high-quality photograph. "
+        "Preserve the original composition and person's likeness exactly."
     )
 
 

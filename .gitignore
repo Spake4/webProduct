@@ -47,3 +47,5 @@ car_red_result.png
 nginx-conf/
 .secrets
 backend/.env
+backend/.env
+backend/.env.*

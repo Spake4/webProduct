@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import String, DateTime, ForeignKey, JSON, Text
+from sqlalchemy import String, DateTime, ForeignKey, Integer, JSON, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -14,6 +14,7 @@ class Task(Base):
     user_id: Mapped[str] = mapped_column(String, ForeignKey("users.id"), nullable=False, index=True)
     service_id: Mapped[str] = mapped_column(String, ForeignKey("services.id"), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    progress: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     input_image_url: Mapped[str] = mapped_column(String(500), nullable=False)
     output_image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     params: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
