@@ -158,11 +158,6 @@ Frontend polling GET /tasks/{id} каждые 2 сек → показывает 
 
 Swagger UI: `http://localhost:8000/api/docs`
 
-## Лицензия
-
-MIT
-
-## Безопасность
 
 ### Закрытые порты
 | Порт | Сервис | Доступ |
